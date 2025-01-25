@@ -3,19 +3,28 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-import time, base64, smtplib, ssl, os, glob
+import time, base64, smtplib, ssl, os
 import pandas as pd
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 
 #INICIO DE PROCESO
 data = 2
+
+#VARIABLES GLOBALES
+total = 0
+porcentaje = 0
+totalProductos = 0
 
 while data != 1:
 
     try:
 
         class Prueba(object):
+
+
 
             def __init__(self):
 
@@ -42,7 +51,7 @@ while data != 1:
                 init.execute_script("arguments[0].scrollIntoView(true);", anexo)
                 time.sleep(5)
                 anexo.click()
-
+                time.sleep(10)
                 init.close()
 
             def generacionArchivo():
@@ -66,6 +75,15 @@ while data != 1:
                 #LECTURA ARCHIVO BASE
                 df = pd.read_excel('C:\\Users\\franc\\OneDrive\\Documentos\\GitHub\\pruebas\\Archivos\\Proceso\\base.xlsx', engine='openpyxl')
 
+                #SUMAR TOTAL PRODUCTOS
+                row = 0
+
+                while row < len(df.index)-1:
+
+                    global totalProductos 
+                    totalProductos += int(df.iloc[row, 7])
+                    row+=1
+
                 #ORDENAR DATAFRAME DE MAYOR A MENOR
                 df_sorted = df.sort_values(by='Cantidades vendidas ', ascending=False)
 
@@ -79,8 +97,8 @@ while data != 1:
 
                 #ELIMINAR FILAS QUE NO CORRESPONDEN A LOS 10 PRIMEROS PRODUCTOS MAS VENDIDOS
                 row = 10
-
                 filas = len(df.index)
+
                 while row < filas:
 
                     df.drop([row], inplace=True)
@@ -93,6 +111,24 @@ while data != 1:
                 #LECTURA ARCHIVO PRODUCTOS MAS VENDIDOS
                 df = pd.read_excel('C:\\Users\\franc\\OneDrive\\Documentos\\GitHub\\pruebas\\Archivos\\Resultado\\mas_vendidos.xlsx', engine='openpyxl')
 
+                #SUMAR TOTAL PRODUCTOS MAS VENDIDOS
+                row = 0
+
+                while row < len(df.index):
+
+                    global total
+                    total += int(df.iloc[row, 7])
+                    row+=1
+
+                #SUMAR PRECIOS DE LOS PRODUCTOS MAS VENDIDOS
+                row = 0
+                suma = 0
+
+                while row < len(df.index):
+
+                    suma += round(df.iloc[row,10],2)
+                    row+=1
+
                 #ELIMINAR COLUMNAS DIFERENTES A LAS SOLICITADAS
                 columnas = df.columns.to_list()
 
@@ -104,6 +140,9 @@ while data != 1:
 
                         df.drop(columna, axis=1, inplace=True)
 
+                #AGREGAR NUEVA FILA CON EL TOTAL DE PRECIOS
+                df.loc[len(df.index)] = ["TOTAL PRECIOS","",suma]
+
                 #GENERAR ARCHIVO FINAL
                 df.to_csv('C:\\Users\\franc\\OneDrive\\Documentos\\GitHub\\pruebas\\Archivos\\Resultado\\final.csv', index=False)
 
@@ -111,7 +150,10 @@ while data != 1:
                 for ruta in rutas:
                     os.remove(ruta)
 
-            
+                #CALCULAR PORCENTAJE PRODUCTOS MAS VENDIDOS RESPECTO AL TOTAL VENDIDOS
+                global porcentaje
+                porcentaje = float(round((total * 100) / totalProductos,2))      
+
             def envioEmail():
 
                 #ENCRIPTACIÓN DE CONTRASEÑA EN BASE64
@@ -130,15 +172,28 @@ while data != 1:
                 #CONFIGURACIÓN DEL MENSAJE
                 sender_email = 'francosecundaria@gmail.com'
                 receiver_email = 'francomoncayo123@gmail.com'
-                # subject = 'INTEGRACIÓN JOOR-DYNAMICS ' + str(file)
-                subject = "prueba"
-                body = "Hola"
+                subject = 'RESULTADOS'
+                body = f"Hola {total, totalProductos, porcentaje}"
 
                 message = MIMEMultipart()
                 message['From'] = sender_email
                 message['To'] = receiver_email
                 message['Subject'] = subject
                 message.attach(MIMEText(body, 'plain'))
+
+                # Adjuntar el archivo
+                filename = "C:\\Users\\franc\\OneDrive\\Documentos\\GitHub\\pruebas\\Archivos\\Resultado\\final.csv"  # El archivo que deseas adjuntar
+                attachment = open(filename, "rb")
+
+                part = MIMEBase('application', 'octet-stream')
+                part.set_payload(attachment.read())
+                encoders.encode_base64(part)
+
+                # Agregar el encabezado de la parte del archivo adjunto
+                part.add_header('Content-Disposition', f'attachment; filename={filename}')
+
+                # Adjuntar la parte del archivo al correo
+                message.attach(part)
 
                 context = ssl.create_default_context()
 
@@ -156,7 +211,7 @@ while data != 1:
 
             # Prueba.descargaArchivo()
             Prueba.generacionArchivo()
-            # Prueba.envioEmail()
+            Prueba.envioEmail()
 
         if __name__ == "__main__":
 
@@ -164,6 +219,7 @@ while data != 1:
 
         data = 1
 
-    except:
+    except Exception as e:
 
+        print(e)
         data = 2
