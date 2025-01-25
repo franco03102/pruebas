@@ -35,7 +35,7 @@ while data != 1:
                 #CONFIGURACIÓN DE DESCARGA EN EL NAVEGADOR
                 settings = Options()
                 settings.add_experimental_option(
-                    "prefs", {"download.default_directory":"C:\\Users\\franc\\OneDrive\\Documentos\\GitHub\\pruebas\\Archivos\\Original"}
+                    "prefs", {"download.default_directory":"{{ruta}}\\Archivos\\Original"}
                 )
 
                 #INICIO DEL NAVEGADOR CON SUS CONFIGURACIONES
@@ -54,12 +54,23 @@ while data != 1:
                 time.sleep(10)
                 init.close()
 
+            def crearCarpetas():
+
+                carpetas = ["Archivos","Archivos\\Original", "Archivos\\Proceso", "Archivos\\Resultado"]
+
+                for nombre in carpetas:
+                    try:
+                        os.mkdir(nombre)
+                    except FileExistsError:
+                        continue
+
+
             def generacionArchivo():
 
                 rutas = []
 
                 #LECTURA ARCHIVO ORIGINAL
-                df = pd.read_excel('C:\\Users\\franc\\OneDrive\\Documentos\\GitHub\\pruebas\\Archivos\\Original\\pvpapn-2021-03-18-anexo-referencias-mas-vendidas.xlsx', sheet_name= "Cantidad_municipio 1203-1603", engine='openpyxl',header=None)
+                df = pd.read_excel('Archivos\\Original\\pvpapn-2021-03-18-anexo-referencias-mas-vendidas.xlsx', sheet_name= "Cantidad_municipio 1203-1603", engine='openpyxl',header=None)
 
                 #ELIMINAR DE ENCABEZADO
                 row = 0
@@ -69,11 +80,11 @@ while data != 1:
                     row+=1
 
                 #GENERAR ARCHIVO BASE PARA MANIPULACIÓN DE DATOS
-                df.to_excel('C:\\Users\\franc\\OneDrive\\Documentos\\GitHub\\pruebas\\Archivos\\Proceso\\base.xlsx', index=False, header=None, engine='openpyxl')
-                rutas.append('C:\\Users\\franc\\OneDrive\\Documentos\\GitHub\\pruebas\\Archivos\\Proceso\\base.xlsx')
+                df.to_excel('Archivos\\Proceso\\base.xlsx', index=False, header=None, engine='openpyxl')
+                rutas.append('Archivos\\Proceso\\base.xlsx')
 
                 #LECTURA ARCHIVO BASE
-                df = pd.read_excel('C:\\Users\\franc\\OneDrive\\Documentos\\GitHub\\pruebas\\Archivos\\Proceso\\base.xlsx', engine='openpyxl')
+                df = pd.read_excel('Archivos\\Proceso\\base.xlsx', engine='openpyxl')
 
                 #SUMAR TOTAL PRODUCTOS
                 row = 0
@@ -88,12 +99,12 @@ while data != 1:
                 df_sorted = df.sort_values(by='Cantidades vendidas ', ascending=False)
 
                 #GENERAR ARCHIVO ORDENADO
-                df_sorted.to_excel('C:\\Users\\franc\\OneDrive\\Documentos\\GitHub\\pruebas\\Archivos\\Proceso\\ordenado.xlsx', index=False, engine='openpyxl')
-                rutas.append('C:\\Users\\franc\\OneDrive\\Documentos\\GitHub\\pruebas\\Archivos\\Proceso\\ordenado.xlsx')
+                df_sorted.to_excel('Archivos\\Proceso\\ordenado.xlsx', index=False, engine='openpyxl')
+                rutas.append('Archivos\\Proceso\\ordenado.xlsx')
 
 
                 #LECTURA ARCHIVO ORDENADO
-                df = pd.read_excel('C:\\Users\\franc\\OneDrive\\Documentos\\GitHub\\pruebas\\Archivos\\Proceso\\ordenado.xlsx', engine='openpyxl')
+                df = pd.read_excel('Archivos\\Proceso\\ordenado.xlsx', engine='openpyxl')
 
                 #ELIMINAR FILAS QUE NO CORRESPONDEN A LOS 10 PRIMEROS PRODUCTOS MAS VENDIDOS
                 row = 10
@@ -105,11 +116,11 @@ while data != 1:
                     row+=1
 
                 #GENERAR ARCHIVO PRODUCTOS MAS VENDIDOS
-                df.to_excel('C:\\Users\\franc\\OneDrive\\Documentos\\GitHub\\pruebas\\Archivos\\Resultado\\mas_vendidos.xlsx', index=False, engine='openpyxl')
-                rutas.append('C:\\Users\\franc\\OneDrive\\Documentos\\GitHub\\pruebas\\Archivos\\Resultado\\mas_vendidos.xlsx')
+                df.to_excel('Archivos\\Resultado\\mas_vendidos.xlsx', index=False, engine='openpyxl')
+                rutas.append('Archivos\\Resultado\\mas_vendidos.xlsx')
 
                 #LECTURA ARCHIVO PRODUCTOS MAS VENDIDOS
-                df = pd.read_excel('C:\\Users\\franc\\OneDrive\\Documentos\\GitHub\\pruebas\\Archivos\\Resultado\\mas_vendidos.xlsx', engine='openpyxl')
+                df = pd.read_excel('Archivos\\Resultado\\mas_vendidos.xlsx', engine='openpyxl')
 
                 #SUMAR TOTAL PRODUCTOS MAS VENDIDOS
                 row = 0
@@ -144,7 +155,7 @@ while data != 1:
                 df.loc[len(df.index)] = ["TOTAL PRECIOS","",suma]
 
                 #GENERAR ARCHIVO FINAL
-                df.to_csv('C:\\Users\\franc\\OneDrive\\Documentos\\GitHub\\pruebas\\Archivos\\Resultado\\final.csv', index=False)
+                df.to_csv('Archivos\\Resultado\\final.csv', index=False)
 
                 #ELIMINAR ARCHIVOS NO RELEVANTES
                 for ruta in rutas:
@@ -157,7 +168,7 @@ while data != 1:
             def envioEmail():
 
                 #ENCRIPTACIÓN DE CONTRASEÑA EN BASE64
-                encode = b'ZnNyZCB0dmVuIGZhY3IgeWFicw=='
+                encode = b"contrasena"
                 data = base64.b64decode(encode)
 
                 #TRANSOFMACIÓN DE INFORMACIÓN EN FORMATO UTF-8
@@ -166,14 +177,15 @@ while data != 1:
                 #CONFIGURACIÓN DEL SERVIDOR
                 smtp_server = "smtp.gmail.com"
                 smtp_port = 587
-                smtp_username = 'francosecundaria@gmail.com'
+                smtp_username = '{{usuario}}'
                 smtp_password = password
 
                 #CONFIGURACIÓN DEL MENSAJE
-                sender_email = 'francosecundaria@gmail.com'
-                receiver_email = 'francomoncayo123@gmail.com'
+                sender_email = smtp_username
+                receiver_email = '{{receptor}}'
                 subject = 'RESULTADOS'
-                body = f"Hola {total, totalProductos, porcentaje}"
+                body = f"""RESUMEN:
+                El total de los productos vendidos fue de {totalProductos}, de los cuales {total} corresponden al total de los 10 productos más vendidos, los cuales equivalen al {porcentaje}% del total de productos vendidos"""
 
                 message = MIMEMultipart()
                 message['From'] = sender_email
@@ -181,18 +193,15 @@ while data != 1:
                 message['Subject'] = subject
                 message.attach(MIMEText(body, 'plain'))
 
-                # Adjuntar el archivo
-                filename = "C:\\Users\\franc\\OneDrive\\Documentos\\GitHub\\pruebas\\Archivos\\Resultado\\final.csv"  # El archivo que deseas adjuntar
+                filename = "Archivos\\Resultado\\final.csv"
                 attachment = open(filename, "rb")
 
                 part = MIMEBase('application', 'octet-stream')
                 part.set_payload(attachment.read())
                 encoders.encode_base64(part)
 
-                # Agregar el encabezado de la parte del archivo adjunto
-                part.add_header('Content-Disposition', f'attachment; filename={filename}')
+                part.add_header('Content-Disposition', 'attachment; filename=final.csv')
 
-                # Adjuntar la parte del archivo al correo
                 message.attach(part)
 
                 context = ssl.create_default_context()
@@ -209,7 +218,8 @@ while data != 1:
 
         def main():
 
-            # Prueba.descargaArchivo()
+            Prueba.crearCarpetas()
+            Prueba.descargaArchivo()
             Prueba.generacionArchivo()
             Prueba.envioEmail()
 
